@@ -47,7 +47,10 @@ async function submit() {
           <!-- labelで何をするところなのかを表現 -->
           <!-- forの要素名をinputのidと一緒にさせることで、両者が紐づく。これにより、メールアドレスという文字をクリックしたときに入力欄へフォーカス。スクリーンリーダなどのメリット -->
           <label for="email">メールアドレス</label>
-          <!--  -->
+          <!-- idはlabelとの関連付けに使う -->
+          <!-- v-modelで入力内容とscript側のemailを同期する -->
+          <!-- nameは通常のフォーム送信における項目名 -->
+          <!-- typeは入力欄の種類、autocompleteはブラウザやパスワードマネージャーへ自動入力の目的を伝える -->
           <input
             id="email"
             v-model="email"
@@ -66,11 +69,14 @@ async function submit() {
             autocomplete="current-password"
             required
           />
-
+          <!-- 通常はerrorMessageが空文字なので内容は表示されない -->
+          <!-- 要素を常に置き、CSSで高さを確保することで、エラー表示時の配置のずれを抑える -->
           <p class="form-message" :class="{ 'form-error': errorMessage }" role="alert">{{ errorMessage }}</p>
-
+          <!-- loading中は使えないようにする。二重送信防止 -->
           <button class="primary-button" type="submit" :disabled="loading">
+            <!-- loading中だけ小さいspinnerを表示する -->
             <span v-if="loading" class="spinner spinner-small" aria-hidden="true" />
+            <!-- loadingに応じてボタンの文言を切り替える -->
             {{ loading ? "確認中" : "ログイン" }}
           </button>
         </form>

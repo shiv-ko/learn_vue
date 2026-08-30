@@ -1,0 +1,31 @@
+{
+  "name": "todo-app-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:backend": "tsc --noEmit",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "vitest run",
+    "test:frontend": "npm --prefix frontend test",
+    "test": "npm run build:frontend && npm run test:backend && npm run test:frontend",
+    "synth": "npm run build && cdk synth",
+    "deploy": "npm run build && cdk deploy"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.150.0",
+    "aws-cdk-lib": "^2.150.0",
+    "constructs": "^10.3.0",
+    "typescript": "^5.8.3",
+    "ts-node": "^10.9.2",
+    "esbuild": "^0.23.0",
+    "vitest": "^2.0.5",
+    "aws-sdk-client-mock": "^4.0.1",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.14.15"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.616.0",
+    "@aws-sdk/lib-dynamodb": "^3.616.0"
+  }
+}

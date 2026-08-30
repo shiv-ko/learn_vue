@@ -1,0 +1,68 @@
+/* Hallmark tokens · Coral theme · modern-minimal workbench */
+:root {
+  --font-body: "Geist", "Noto Sans JP", sans-serif;
+  --font-display: "Geist", "Noto Sans JP", sans-serif;
+  --font-accent: "Fraunces", "Noto Serif JP", serif;
+
+  --color-canvas: oklch(97% 0.012 50);
+  --color-surface: oklch(99% 0.006 50);
+  --color-surface-muted: oklch(94% 0.018 50);
+  --color-ink: oklch(24% 0.026 35);
+  --color-ink-muted: oklch(49% 0.025 40);
+  --color-border: oklch(85% 0.025 45);
+  --color-border-strong: oklch(68% 0.04 38);
+  --color-accent: oklch(50% 0.2 35);
+  --color-accent-ink: oklch(99% 0.006 50);
+  --color-accent-hover: oklch(43% 0.19 32);
+  --color-accent-soft: oklch(92% 0.045 35);
+  --color-success: oklch(53% 0.115 155);
+  --color-success-soft: oklch(93% 0.035 155);
+  --color-danger: oklch(54% 0.19 27);
+  --color-danger-soft: oklch(94% 0.04 27);
+  --color-priority-high: oklch(54% 0.19 27);
+  --color-priority-high-soft: oklch(96% 0.025 27);
+  --color-priority-medium: oklch(51% 0.12 70);
+  --color-priority-medium-soft: oklch(96% 0.03 70);
+  --color-priority-low: oklch(50% 0.105 155);
+  --color-priority-low-soft: oklch(96% 0.025 155);
+  --color-priority-none: oklch(58% 0.025 40);
+  --color-priority-none-soft: oklch(96% 0.012 45);
+  --color-focus: oklch(67% 0.18 250);
+  --color-shadow: oklch(22% 0.02 35 / 0.12);
+  --color-overlay: oklch(18% 0.02 35 / 0.68);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(2.2rem, 6vw, 4.75rem);
+  --leading-tight: 1.08;
+  --leading-body: 1.7;
+  --tracking-label: 0.14em;
+
+  --radius-sm: 0.35rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-pill: 999px;
+  --shadow-panel: 0 1.5rem 4rem var(--color-shadow);
+
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --z-toast: 20;
+  --z-drag: 30;
+  --control-height: 3.25rem;
+}

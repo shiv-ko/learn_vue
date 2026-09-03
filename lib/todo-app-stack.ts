@@ -11,6 +11,8 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 
 export class TodoAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -21,6 +23,27 @@ export class TodoAppStack extends cdk.Stack {
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const bookmarksTable = new dynamodb.Table(this, "BookmarksTable", {
+      tableName: "Bookmarks",
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const metadataDeadLetterQueue = new sqs.Queue(this, "BookmarkMetadataDeadLetterQueue", {
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const metadataQueue = new sqs.Queue(this, "BookmarkMetadataQueue", {
+      visibilityTimeout: cdk.Duration.seconds(120),
+      retentionPeriod: cdk.Duration.days(4),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: metadataDeadLetterQueue,
+        maxReceiveCount: 5,
+      },
     });
 
     const lineChannelSecret = ssm.StringParameter.valueForStringParameter(
@@ -36,16 +59,50 @@ export class TodoAppStack extends cdk.Stack {
     });
     table.grantReadWriteData(todosApiFn);
 
+    const bookmarksApiFn = new nodejs.NodejsFunction(this, "BookmarksApiFunction", {
+      entry: path.join(__dirname, "../src/bookmarks-api/handler.ts"),
+      handler: "handler",
+      runtime: lambda.Runtime.NODEJS_24_X,
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        BOOKMARKS_TABLE_NAME: bookmarksTable.tableName,
+        BOOKMARK_METADATA_QUEUE_URL: metadataQueue.queueUrl,
+      },
+    });
+    bookmarksTable.grantReadWriteData(bookmarksApiFn);
+    metadataQueue.grantSendMessages(bookmarksApiFn);
+
+    const bookmarkMetadataFn = new nodejs.NodejsFunction(this, "BookmarkMetadataFunction", {
+      entry: path.join(__dirname, "../src/bookmark-metadata/handler.ts"),
+      handler: "handler",
+      runtime: lambda.Runtime.NODEJS_24_X,
+      timeout: cdk.Duration.seconds(45),
+      memorySize: 256,
+      environment: { BOOKMARKS_TABLE_NAME: bookmarksTable.tableName },
+    });
+    bookmarksTable.grantReadWriteData(bookmarkMetadataFn);
+    bookmarkMetadataFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(metadataQueue, {
+        batchSize: 1,
+        reportBatchItemFailures: true,
+      }),
+    );
+
     const lineWebhookFn = new nodejs.NodejsFunction(this, "LineWebhookFunction", {
       entry: path.join(__dirname, "../src/line-webhook/handler.ts"),
       handler: "handler",
       runtime: lambda.Runtime.NODEJS_24_X,
+      timeout: cdk.Duration.seconds(10),
       environment: {
         TODOS_TABLE_NAME: table.tableName,
+        BOOKMARKS_TABLE_NAME: bookmarksTable.tableName,
+        BOOKMARK_METADATA_QUEUE_URL: metadataQueue.queueUrl,
         LINE_CHANNEL_SECRET: lineChannelSecret,
       },
     });
     table.grantReadWriteData(lineWebhookFn);
+    bookmarksTable.grantReadWriteData(lineWebhookFn);
+    metadataQueue.grantSendMessages(lineWebhookFn);
 
     const api = new apigateway.RestApi(this, "TodoApi", {
       restApiName: "todo-app-api",
@@ -73,6 +130,33 @@ export class TodoAppStack extends cdk.Stack {
       authFlows: { userSrp: true, userPassword: true },
       disableOAuth: true,
       preventUserExistenceErrors: true,
+    });
+
+    const androidUserPoolClient = userPool.addClient("TodoAppAndroidClient", {
+      userPoolClientName: "todo-app-android",
+      generateSecret: false,
+      authFlows: { userSrp: true, userPassword: true },
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [
+          cognito.OAuthScope.OPENID,
+          cognito.OAuthScope.EMAIL,
+          cognito.OAuthScope.PROFILE,
+        ],
+        callbackUrls: ["todobookmark://callback"],
+        logoutUrls: ["todobookmark://signout"],
+      },
+      idTokenValidity: cdk.Duration.minutes(60),
+      accessTokenValidity: cdk.Duration.minutes(60),
+      refreshTokenValidity: cdk.Duration.days(30),
+      enableTokenRevocation: true,
+      preventUserExistenceErrors: true,
+    });
+
+    const userPoolDomain = userPool.addDomain("TodoAppHostedUiDomain", {
+      cognitoDomain: {
+        domainPrefix: `todo-app-${cdk.Aws.ACCOUNT_ID}`,
+      },
     });
 
     const authorizer = new apigateway.CognitoUserPoolsAuthorizer(
@@ -115,6 +199,31 @@ export class TodoAppStack extends cdk.Stack {
 
     const lineResource = api.root.addResource("line").addResource("webhook");
     lineResource.addMethod("POST", new apigateway.LambdaIntegration(lineWebhookFn));
+
+    const bookmarksResource = api.root.addResource("bookmarks");
+    bookmarksResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(bookmarksApiFn),
+      authenticatedMethodOptions,
+    );
+    bookmarksResource
+      .addResource("batch")
+      .addMethod(
+        "POST",
+        new apigateway.LambdaIntegration(bookmarksApiFn),
+        authenticatedMethodOptions,
+      );
+    const bookmarkIdResource = bookmarksResource.addResource("{id}");
+    bookmarkIdResource.addMethod(
+      "PATCH",
+      new apigateway.LambdaIntegration(bookmarksApiFn),
+      authenticatedMethodOptions,
+    );
+    bookmarkIdResource.addMethod(
+      "DELETE",
+      new apigateway.LambdaIntegration(bookmarksApiFn),
+      authenticatedMethodOptions,
+    );
 
     const frontendBucket = new s3.Bucket(this, "FrontendBucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -196,6 +305,8 @@ export class TodoAppStack extends cdk.Stack {
         additionalBehaviors: {
           todos: apiBehavior,
           "todos/*": apiBehavior,
+          bookmarks: apiBehavior,
+          "bookmarks/*": apiBehavior,
         },
         minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_200,
@@ -214,6 +325,16 @@ export class TodoAppStack extends cdk.Stack {
     new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
     new cdk.CfnOutput(this, "UserPoolClientId", {
       value: userPoolClient.userPoolClientId,
+    });
+    new cdk.CfnOutput(this, "AndroidUserPoolClientId", {
+      value: androidUserPoolClient.userPoolClientId,
+    });
+    new cdk.CfnOutput(this, "HostedUiDomain", {
+      value: userPoolDomain.baseUrl(),
+    });
+    new cdk.CfnOutput(this, "Region", { value: cdk.Aws.REGION });
+    new cdk.CfnOutput(this, "AndroidCallbackUrl", {
+      value: "todobookmark://callback",
     });
     new cdk.CfnOutput(this, "AppUrl", {
       value: `https://${distribution.distributionDomainName}`,

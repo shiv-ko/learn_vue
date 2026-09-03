@@ -9,10 +9,13 @@ describe("TodoAppStack", () => {
     const stack = new TodoAppStack(app, "TestTodoAppStack");
     const template = Template.fromStack(stack);
 
-    template.resourceCountIs("AWS::DynamoDB::Table", 1);
+    template.resourceCountIs("AWS::DynamoDB::Table", 2);
     template.resourceCountIs("AWS::ApiGateway::RestApi", 1);
     template.resourceCountIs("AWS::Cognito::UserPool", 1);
-    template.resourceCountIs("AWS::Cognito::UserPoolClient", 1);
+    template.resourceCountIs("AWS::Cognito::UserPoolClient", 2);
+    template.resourceCountIs("AWS::Cognito::UserPoolDomain", 1);
+    template.resourceCountIs("AWS::SQS::Queue", 2);
+    template.resourceCountIs("AWS::Lambda::EventSourceMapping", 1);
     template.resourceCountIs("AWS::ApiGateway::Authorizer", 1);
     template.resourceCountIs("AWS::ApiGateway::ApiKey", 0);
     template.resourceCountIs("AWS::S3::Bucket", 1);
@@ -36,6 +39,23 @@ describe("TodoAppStack", () => {
         "ALLOW_USER_SRP_AUTH",
         "ALLOW_REFRESH_TOKEN_AUTH",
       ],
+    });
+
+    template.hasResourceProperties("AWS::Cognito::UserPoolClient", {
+      ClientName: "todo-app-android",
+      GenerateSecret: false,
+      AllowedOAuthFlows: ["code"],
+      AllowedOAuthScopes: ["openid", "email", "profile"],
+      AllowedOAuthFlowsUserPoolClient: true,
+      CallbackURLs: ["todobookmark://callback"],
+      LogoutURLs: ["todobookmark://signout"],
+      IdTokenValidity: 60,
+      RefreshTokenValidity: 43_200,
+      TokenValidityUnits: {
+        AccessToken: "minutes",
+        IdToken: "minutes",
+        RefreshToken: "minutes",
+      },
     });
 
     template.hasResourceProperties("AWS::ApiGateway::Method", {
@@ -71,6 +91,8 @@ describe("TodoAppStack", () => {
         CacheBehaviors: Match.arrayWith([
           Match.objectLike({ PathPattern: "todos" }),
           Match.objectLike({ PathPattern: "todos/*" }),
+          Match.objectLike({ PathPattern: "bookmarks" }),
+          Match.objectLike({ PathPattern: "bookmarks/*" }),
         ]),
       }),
     });

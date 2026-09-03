@@ -1,6 +1,8 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { verifySignature } from "./verify-signature";
 import { createTodo } from "../shared/todos-repository";
+import { extractMemo, extractUrls } from "../shared/bookmark-url";
+import { registerBookmarkBatch } from "../shared/bookmarks-service";
 
 interface LineMessageEvent {
   type: string;
@@ -28,7 +30,18 @@ export async function handler(
       lineEvent.message?.type === "text" &&
       lineEvent.message.text
     ) {
-      await createTodo({ title: lineEvent.message.text, tags: ["inbox"] });
+      const text = lineEvent.message.text;
+      const urls = extractUrls(text);
+      if (urls.length > 0) {
+        await registerBookmarkBatch({
+          items: urls.map((url) => ({ url })),
+          memo: extractMemo(text),
+          status: "inbox",
+          source: "line",
+        });
+      } else {
+        await createTodo({ title: text, tags: ["inbox"] });
+      }
     }
   }
 

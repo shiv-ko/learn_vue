@@ -13,19 +13,20 @@
     "deploy": "npm run build && cdk deploy"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.14.15",
     "aws-cdk": "^2.150.0",
     "aws-cdk-lib": "^2.150.0",
-    "constructs": "^10.3.0",
-    "typescript": "^5.8.3",
-    "ts-node": "^10.9.2",
-    "esbuild": "^0.23.0",
-    "vitest": "^2.0.5",
     "aws-sdk-client-mock": "^4.0.1",
-    "@types/aws-lambda": "^8.10.145",
-    "@types/node": "^20.14.15"
+    "constructs": "^10.3.0",
+    "esbuild": "^0.23.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "vitest": "^2.0.5"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.616.0",
+    "@aws-sdk/client-sqs": "^3.1125.0",
     "@aws-sdk/lib-dynamodb": "^3.616.0"
   }
 }

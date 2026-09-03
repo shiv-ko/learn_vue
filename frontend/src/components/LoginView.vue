@@ -27,12 +27,12 @@ async function submit() {
 <template>
   <main class="login-shell">
     <section class="login-story" aria-labelledby="login-title">
-      <p class="eyebrow">PERSONAL TODO</p>
+      <p class="eyebrow">TODO + READING QUEUE</p>
       <h1 id="login-title"><span>Today,</span><br />one thing at a time.</h1>
-      <p class="login-copy">PCでもスマホでも、やることは同じ場所へ。LINEから追加したTodoもここに並びます。</p>
+      <p class="login-copy">Todoも、あとで読みたいリンクもひとつの場所へ。LINEやAndroidから追加した内容をここで整理できます。</p>
       <div class="sync-note">
         <span class="sync-mark" aria-hidden="true">↗</span>
-        <span>LINEからの追加と自動同期</span>
+        <span>LINE・Androidから自動同期</span>
       </div>
     </section>
 
@@ -40,7 +40,7 @@ async function submit() {
       <div class="login-form-wrap">
         <p class="eyebrow">WELCOME BACK</p>
         <h2>ログイン</h2>
-        <p class="form-intro">Cognitoに登録したメールアドレスで続けます。</p>
+        <p class="form-intro">Todoと「あとで読む」を、登録済みのアカウントで続けます。</p>
         <!-- @submit.preventでformの送信イベント（postなど）を止めて、独自のsubmit()関数を呼ぶよという意味 -->
         <!-- デフォルトでformは指定されたURLへPOSTし、ページを再読み込みしてしまうので、止める(実際はcognitoを呼びたい) -->
         <form @submit.prevent="submit">

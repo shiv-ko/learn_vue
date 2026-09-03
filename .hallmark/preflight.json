@@ -1,0 +1,9 @@
+{
+  "scannedAt": "2026-09-03",
+  "fontStack": "Geist + Noto Sans JP, with Fraunces as the wordmark accent",
+  "palette": "OKLCH custom properties in frontend/src/tokens.css",
+  "motion": "motion-cut; no animation library installed",
+  "spacing": "4px-based CSS custom property scale",
+  "framework": "Vue 3 with Vite",
+  "preserved": ["font stack", "palette", "spacing scale", "Workbench structure"]
+}

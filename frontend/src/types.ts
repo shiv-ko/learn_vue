@@ -43,3 +43,34 @@ export interface UpdateTodoInput {
 }
 
 export type TodoFilter = "open" | "all" | "done";
+
+export type BookmarkStatus = "inbox" | "reading" | "read" | "archive";
+export type BookmarkSource = "line" | "android" | "web";
+export type MetadataStatus = "pending" | "ready" | "failed";
+
+export interface Bookmark {
+  id: string;
+  url: string;
+  normalizedUrl: string;
+  title?: string;
+  description?: string;
+  siteName?: string;
+  imageUrl?: string;
+  status: BookmarkStatus;
+  tags: string[];
+  memo?: string;
+  favorite: boolean;
+  source: BookmarkSource;
+  metadataStatus: MetadataStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateBookmarkInput {
+  url?: string;
+  title?: string | null;
+  status?: BookmarkStatus;
+  tags?: string[];
+  memo?: string | null;
+  favorite?: boolean;
+}

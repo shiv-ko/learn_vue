@@ -7,7 +7,7 @@ import TodoItem from "./TodoItem.vue";
 import StackedTodoItem from "./StackedTodoItem.vue";
 
 const props = defineProps<{ token: string }>();
-const emit = defineEmits<{ logout: [] }>();
+const emit = defineEmits<{ logout: []; showBookmarks: [] }>();
 
 const todos = ref<Todo[]>([]);
 const filter = ref<TodoFilter>("open");
@@ -427,6 +427,10 @@ onBeforeUnmount(() => {
   <main class="workspace-shell">
     <header class="app-header">
       <a class="wordmark" href="#top" aria-label="Todo ホーム">Todo.</a>
+      <nav class="view-switch" aria-label="表示する機能">
+        <button type="button" class="view-switch-button is-active" aria-current="page">Todo</button>
+        <button type="button" class="view-switch-button" @click="emit('showBookmarks')">あとで読む</button>
+      </nav>
       <div class="header-actions">
         <span class="sync-status" aria-live="polite">
           <span class="status-dot" :class="{ 'is-refreshing': refreshing }" aria-hidden="true" />

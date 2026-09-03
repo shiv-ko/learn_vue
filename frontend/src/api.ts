@@ -1,5 +1,5 @@
 import { appConfig } from "./config";
-import type { CreateTodoInput, Todo, UpdateTodoInput } from "./types";
+import type { Bookmark, CreateTodoInput, Todo, UpdateBookmarkInput, UpdateTodoInput } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -15,8 +15,9 @@ async function request<T>(
   token: string,
   path = "",
   options: RequestInit = {},
+  basePath: string = appConfig.apiBasePath,
 ): Promise<T> {
-  const response = await fetch(`${appConfig.apiBasePath}${path}`, {
+  const response = await fetch(`${basePath}${path}`, {
     ...options,
     headers: {
       Authorization: token,
@@ -37,6 +38,15 @@ async function request<T>(
   }
 
   if (response.status === 204) return undefined as T;
+
+  const contentType = response.headers.get("Content-Type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new ApiError(
+      "APIからJSONではない応答が返されました。接続先の設定を確認してください。",
+      response.status,
+    );
+  }
+
   return (await response.json()) as T;
 }
 
@@ -53,3 +63,13 @@ export const todoApi = {
     request<void>(token, `/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
 
+export const bookmarkApi = {
+  list: (token: string) => request<Bookmark[]>(token, "", {}, "/bookmarks"),
+  update: (token: string, id: string, input: UpdateBookmarkInput) =>
+    request<Bookmark>(token, `/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }, "/bookmarks"),
+  remove: (token: string, id: string) =>
+    request<void>(token, `/${encodeURIComponent(id)}`, { method: "DELETE" }, "/bookmarks"),
+};

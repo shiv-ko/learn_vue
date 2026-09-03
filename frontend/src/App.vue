@@ -2,10 +2,12 @@
 import { onMounted, ref } from "vue";
 import LoginView from "./components/LoginView.vue";
 import TodoWorkspace from "./components/TodoWorkspace.vue";
+import BookmarkWorkspace from "./components/BookmarkWorkspace.vue";
 import { getCurrentToken, signIn, signOut } from "./auth";
 
 const token = ref<string | null>(null);
 const checkingSession = ref(true);
+const activeView = ref<"todos" | "bookmarks">("todos");
 
 onMounted(async () => {
   token.value = await getCurrentToken();
@@ -22,6 +24,7 @@ async function handleLogin(credentials: { email: string; password: string }) {
 function handleLogout() {
   signOut();
   token.value = null;
+  activeView.value = "todos";
 }
 </script>
 
@@ -34,7 +37,18 @@ function handleLogout() {
   </main>
   <!-- v-else-ifでtokenがtruthyかを確認(テンプレート内では.valueがいらない) -->
   <!-- :token="token"でTodoWorkspaceの方にPropsを渡している -->
-  <TodoWorkspace v-else-if="token" :token="token" @logout="handleLogout" />
+  <TodoWorkspace
+    v-else-if="token && activeView === 'todos'"
+    :token="token"
+    @logout="handleLogout"
+    @show-bookmarks="activeView = 'bookmarks'"
+  />
+  <BookmarkWorkspace
+    v-else-if="token"
+    :token="token"
+    @logout="handleLogout"
+    @show-todos="activeView = 'todos'"
+  />
   <!-- :loginでPropsを渡す -->
   <LoginView v-else :login="handleLogin" />
 </template>

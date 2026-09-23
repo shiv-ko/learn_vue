@@ -1,6 +1,5 @@
 export type Priority = "high" | "medium" | "low";
 export type TodoKind = "standard" | "stacked";
-
 export interface Todo {
   id: string;
   title: string;

@@ -1,10 +1,14 @@
+<!-- TodoWorkSpace.vueから呼ばれている、Todoを作るための部品 -->
+<!-- Todoを作るための画面 -->
 <script setup lang="ts">
 import { ref } from "vue";
 import { parseTagInput } from "../tags";
 import type { CreateTodoInput, Priority, TodoKind } from "../types";
 import MarkdownNoteField from "./MarkdownNoteField.vue";
 
+// propsの定義
 defineProps<{ saving: boolean }>();
+// Emitsの定義
 const emit = defineEmits<{ create: [input: CreateTodoInput] }>();
 
 const title = ref("");
@@ -17,8 +21,10 @@ const kind = ref<TodoKind>("standard");
 const expanded = ref(false);
 
 function submit() {
+  // 前後の空白を取り除く
   const cleanTitle = title.value.trim();
   if (!cleanTitle) return;
+  // 親コンポーネント（TodoWorkspace．vueにしらせる）
   emit("create", {
     title: cleanTitle,
     ...(dueDate.value ? { dueDate: dueDate.value } : {}),
@@ -40,9 +46,11 @@ function submit() {
 </script>
 
 <template>
+  <!-- ここの@Submit.prevent="submit"で、通常のFormの送信（POST)をさせずに、自前の関数を呼ばせる -->
   <form class="composer" @submit.prevent="submit">
     <div class="composer-main">
       <label class="sr-only" for="todo-title">新しいTodo</label>
+      <!-- ＠Focusでフォーカスされたら、下のExpandedをTrueにして画面を拡張する。 -->
       <input
         id="todo-title"
         v-model="title"
@@ -52,6 +60,7 @@ function submit() {
         required
         @focus="expanded = true"
       />
+      <!-- ここの、type="submit"はFormの動きを変えるため、resetにしたら、初期値に戻ったり、buttonにしたら、ボタンが押される（ボタン側に色々かける） -->
       <button class="primary-button composer-submit" type="submit" :disabled="saving || !title.trim()">
         {{ saving ? "追加中" : "追加" }}
       </button>

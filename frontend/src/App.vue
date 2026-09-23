@@ -5,11 +5,15 @@ import TodoWorkspace from "./components/TodoWorkspace.vue";
 import BookmarkWorkspace from "./components/BookmarkWorkspace.vue";
 import { getCurrentToken, signIn, signOut } from "./auth";
 
+
+// token
 const token = ref<string | null>(null);
 const checkingSession = ref(true);
+// どのviewがactiveかを制御するための状態
 const activeView = ref<"todos" | "bookmarks">("todos");
 
 onMounted(async () => {
+  // ここでtokenを取得
   token.value = await getCurrentToken();
   checkingSession.value = false;
 });
@@ -43,6 +47,7 @@ function handleLogout() {
     @logout="handleLogout"
     @show-bookmarks="activeView = 'bookmarks'"
   />
+  <!-- activeViewで画面が分岐する -->
   <BookmarkWorkspace
     v-else-if="token"
     :token="token"
@@ -50,5 +55,6 @@ function handleLogout() {
     @show-todos="activeView = 'todos'"
   />
   <!-- :loginでPropsを渡す -->
+  <!-- tokenがない場合はこれが表示される -->
   <LoginView v-else :login="handleLogin" />
 </template>

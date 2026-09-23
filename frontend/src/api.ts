@@ -11,6 +11,9 @@ export class ApiError extends Error {
   }
 }
 
+// したのtodoとbookmarksの中から呼べるようにジェネリクスで書いている
+// optionsでリクエストの中身を決めている。
+// post,fetchなどを使って分岐を作る（src/todos-api/handler.ts）
 async function request<T>(
   token: string,
   path = "",
@@ -18,6 +21,7 @@ async function request<T>(
   basePath: string = appConfig.apiBasePath,
 ): Promise<T> {
   const response = await fetch(`${basePath}${path}`, {
+    // リクエストの中身
     ...options,
     headers: {
       Authorization: token,
@@ -50,7 +54,10 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
+// オブジェクト＋プロパティ（アロー関数）で、プロパティを呼び出すことで、API呼び出しができる
+// オブジェクトリテラルでオブジェクトを作っている
 export const todoApi = {
+  // プロパティとして関数を入れることで、メソッドとして使える
   list: (token: string) => request<Todo[]>(token),
   create: (token: string, input: CreateTodoInput) =>
     request<Todo>(token, "", { method: "POST", body: JSON.stringify(input) }),

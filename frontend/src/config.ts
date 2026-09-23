@@ -1,3 +1,4 @@
+// awsの設定を書いている
 export const appConfig = {
   region: "ap-northeast-3",
   userPoolId: "ap-northeast-3_H9F0jf3UU",

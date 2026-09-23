@@ -6,6 +6,7 @@ import TodoComposer from "./TodoComposer.vue";
 import TodoItem from "./TodoItem.vue";
 import StackedTodoItem from "./StackedTodoItem.vue";
 
+// tokenもrefで管理
 const props = defineProps<{ token: string }>();
 const emit = defineEmits<{ logout: []; showBookmarks: [] }>();
 
@@ -20,6 +21,7 @@ const errorMessage = ref("");
 const lastSyncedAt = ref<Date | null>(null);
 const pendingDelete = ref<{ todo: Todo; timer: number } | null>(null);
 const pendingCompletion = ref<{ todo: Todo; timer: number } | null>(null);
+// drag and drop
 const dragging = ref<{
   todo: Todo;
   pointerId: number;
@@ -27,6 +29,7 @@ const dragging = ref<{
   y: number;
   origin: Priority | null;
 } | null>(null);
+
 const activeDropPriority = ref<Priority | null | undefined>(undefined);
 const activeDropParentId = ref<string | null>(null);
 const dragAnnouncement = ref("");
@@ -442,13 +445,13 @@ onBeforeUnmount(() => {
 
     <section id="top" class="workspace">
       <div class="workspace-heading">
-        <div>
+        <div>/rc
           <p class="eyebrow">MY WORKBENCH</p>
           <h1>やること</h1>
         </div>
         <p class="remaining-count"><strong>{{ openCount }}</strong><span>件 残っています</span></p>
       </div>
-
+      <!-- 子供（TodoComposer)側で、@createのEmitsが呼ばれたら、CreateTodoという関数を呼ぶという宣言 -->
       <TodoComposer :saving="saving" @create="createTodo" />
 
       <div class="list-toolbar">

@@ -74,6 +74,13 @@ describe("BookmarkWorkspace", () => {
     const wrapper = mount(BookmarkWorkspace, { props: { token: "id-token" } });
     await flushPromises();
 
+    const statusButton = (label: string) =>
+      wrapper.findAll(".filter-tabs .filter-button").find((button) => button.text() === label)!;
+    expect(statusButton("未整理").attributes("aria-pressed")).toBe("true");
+    expect(wrapper.text()).toContain("TypeScriptの記事");
+    expect(wrapper.text()).not.toContain("デザインの記事");
+
+    await statusButton("すべて").trigger("click");
     expect(wrapper.text()).toContain("TypeScriptの記事");
     expect(wrapper.text()).toContain("デザインの記事");
 

@@ -5,9 +5,17 @@ import type { CreateTodoInput, Priority, Todo, TodoFilter, UpdateTodoInput } fro
 import TodoComposer from "./TodoComposer.vue";
 import TodoItem from "./TodoItem.vue";
 import StackedTodoItem from "./StackedTodoItem.vue";
+import ExecutionPlan from "./ExecutionPlan.vue";
 
-const props = defineProps<{ token: string }>();
-const emit = defineEmits<{ logout: []; showBookmarks: [] }>();
+const props = withDefaults(defineProps<{ token: string; view?: "todos" | "plan" }>(), {
+  view: "todos",
+});
+const emit = defineEmits<{
+  logout: [];
+  showTodos: [];
+  showPlan: [];
+  showBookmarks: [];
+}>();
 
 const todos = ref<Todo[]>([]);
 const filter = ref<TodoFilter>("open");
@@ -426,9 +434,26 @@ onBeforeUnmount(() => {
 <template>
   <main class="workspace-shell">
     <header class="app-header">
-      <a class="wordmark" href="#top" aria-label="Todo ホーム">Todo.</a>
+      <a class="wordmark" :href="view === 'plan' ? '#plan' : '#top'" aria-label="Todo ホーム">Todo.</a>
       <nav class="view-switch" aria-label="表示する機能">
-        <button type="button" class="view-switch-button is-active" aria-current="page">Todo</button>
+        <button
+          type="button"
+          class="view-switch-button"
+          :class="{ 'is-active': view === 'todos' }"
+          :aria-current="view === 'todos' ? 'page' : undefined"
+          @click="emit('showTodos')"
+        >
+          Todo
+        </button>
+        <button
+          type="button"
+          class="view-switch-button"
+          :class="{ 'is-active': view === 'plan' }"
+          :aria-current="view === 'plan' ? 'page' : undefined"
+          @click="emit('showPlan')"
+        >
+          実行順
+        </button>
         <button type="button" class="view-switch-button" @click="emit('showBookmarks')">あとで読む</button>
       </nav>
       <div class="header-actions">
@@ -440,7 +465,7 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <section id="top" class="workspace">
+    <section v-if="view === 'todos'" id="top" class="workspace">
       <div class="workspace-heading">
         <div>
           <p class="eyebrow">MY WORKBENCH</p>
@@ -590,6 +615,18 @@ onBeforeUnmount(() => {
         <p>{{ emptyMessage }}</p>
       </div>
     </section>
+
+    <section v-else-if="loading" class="workspace list-loading" aria-live="polite">
+      <span class="spinner" aria-hidden="true" />
+      <span>Todoを読み込んでいます</span>
+    </section>
+    <ExecutionPlan
+      v-else
+      :todos="todos"
+      :busy-ids="busyIds"
+      :error-message="errorMessage"
+      @toggle="toggleTodo"
+    />
 
     <footer class="app-footer">
       <span>Todo, quietly kept in sync.</span>

@@ -59,6 +59,17 @@ beforeEach(() => {
 });
 
 describe("BookmarkWorkspace", () => {
+  it("shows the execution plan in the header and requests that view", async () => {
+    const wrapper = mount(BookmarkWorkspace, { props: { token: "id-token" } });
+    await flushPromises();
+
+    const planButton = wrapper.findAll(".view-switch-button").find((button) => button.text() === "実行順");
+    expect(planButton?.exists()).toBe(true);
+    await planButton!.trigger("click");
+    expect(wrapper.emitted("showPlan")).toHaveLength(1);
+    wrapper.unmount();
+  });
+
   it("lists bookmarks and filters by keyword and tag", async () => {
     const wrapper = mount(BookmarkWorkspace, { props: { token: "id-token" } });
     await flushPromises();

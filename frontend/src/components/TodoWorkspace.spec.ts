@@ -37,11 +37,28 @@ import { todoApi } from "../api";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.clear();
   vi.mocked(todoApi.list).mockResolvedValue(todos);
   vi.mocked(todoApi.update).mockImplementation(async (_token, id, input) => {
     const updated = { ...todos.find((todo) => todo.id === id), ...input } as Todo;
     if (input.priority === null) delete updated.priority;
     return updated;
+  });
+});
+
+describe("TodoWorkspace view switch", () => {
+  it("requests the execution plan and renders it when the parent changes the view", async () => {
+    const wrapper = mount(TodoWorkspace, { props: { token: "id-token", view: "todos" } });
+    await flushPromises();
+
+    await wrapper.findAll(".view-switch-button")[1].trigger("click");
+    expect(wrapper.emitted("showPlan")).toHaveLength(1);
+
+    await wrapper.setProps({ view: "plan" });
+
+    expect(wrapper.get("#plan-title").text()).toBe("実行順");
+    expect(wrapper.find(".priority-board").exists()).toBe(false);
+    expect(wrapper.findAll(".view-switch-button")[1].attributes("aria-current")).toBe("page");
   });
 });
 

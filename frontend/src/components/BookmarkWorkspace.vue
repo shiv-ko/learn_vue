@@ -4,7 +4,7 @@ import { ApiError, bookmarkApi } from "../api";
 import type { Bookmark, BookmarkStatus, UpdateBookmarkInput } from "../types";
 
 const props = defineProps<{ token: string }>();
-const emit = defineEmits<{ logout: []; showTodos: [] }>();
+const emit = defineEmits<{ logout: []; showTodos: []; showPlan: [] }>();
 
 const bookmarks = ref<Bookmark[]>([]);
 const loading = ref(true);
@@ -185,6 +185,7 @@ onBeforeUnmount(() => {
       <a class="wordmark" href="#bookmarks-top" aria-label="あとで読む ホーム">Todo.</a>
       <nav class="view-switch" aria-label="表示する機能">
         <button type="button" class="view-switch-button" @click="emit('showTodos')">Todo</button>
+        <button type="button" class="view-switch-button" @click="emit('showPlan')">実行順</button>
         <button type="button" class="view-switch-button is-active" aria-current="page">あとで読む</button>
       </nav>
       <div class="header-actions">

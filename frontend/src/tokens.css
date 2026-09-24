@@ -27,7 +27,7 @@
   --color-priority-low-soft: oklch(96% 0.025 155);
   --color-priority-none: oklch(58% 0.025 40);
   --color-priority-none-soft: oklch(96% 0.012 45);
-  --color-focus: oklch(67% 0.18 250);
+  --color-focus: oklch(56% 0.18 250);
   --color-shadow: oklch(22% 0.02 35 / 0.12);
   --color-overlay: oklch(18% 0.02 35 / 0.68);
 

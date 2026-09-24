@@ -73,8 +73,8 @@ describe("ExecutionPlan", () => {
       attachTo: "body",
     });
 
-    await wrapper.get("#plan-todo-select").setValue("second");
-    await wrapper.get(".plan-add").trigger("submit");
+    await wrapper.get("#plan-todo-search").trigger("focus");
+    await wrapper.get("#plan-option-second").trigger("click");
 
     expect(wrapper.findAll(".plan-item h2").map((heading) => heading.text())).toEqual([
       "資料を読む",
@@ -85,6 +85,47 @@ describe("ExecutionPlan", () => {
       "second",
     ]);
     wrapper.unmount();
+  });
+
+  it("filters unplanned todos by title, tag, and memo", async () => {
+    const wrapper = mount(ExecutionPlan, {
+      props: { todos, busyIds: new Set<string>() },
+    });
+    const input = wrapper.get("#plan-todo-search");
+    const optionTitles = () =>
+      wrapper.findAll(".plan-search-title").map((title) => title.text());
+
+    await input.trigger("focus");
+    expect(optionTitles()).toEqual(["設計を書く", "資料を読む"]);
+
+    await input.setValue("読書");
+    expect(optionTitles()).toEqual(["資料を読む"]);
+
+    await input.setValue("3章");
+    expect(optionTitles()).toEqual(["資料を読む"]);
+
+    await input.setValue("存在しない");
+    expect(optionTitles()).toEqual([]);
+    expect(wrapper.get(".plan-search-empty").text()).toContain("存在しない");
+  });
+
+  it("adds the highlighted search result with the keyboard", async () => {
+    const wrapper = mount(ExecutionPlan, {
+      props: { todos, busyIds: new Set<string>() },
+    });
+    const input = wrapper.get("#plan-todo-search");
+
+    await input.setValue("設計");
+    expect(input.attributes("aria-activedescendant")).toBe("plan-option-second");
+    await input.trigger("keydown", { key: "ArrowDown" });
+    expect(input.attributes("aria-activedescendant")).toBe("plan-option-first");
+    await wrapper.get(".plan-add").trigger("submit");
+
+    expect(wrapper.findAll(".plan-item h2").map((heading) => heading.text())).toEqual([
+      "資料を読む",
+    ]);
+    expect((input.element as HTMLInputElement).value).toBe("");
+    expect(wrapper.find("#plan-option-first").exists()).toBe(false);
   });
 
   it("reorders with the keyboard and keeps focus on the moved todo", async () => {

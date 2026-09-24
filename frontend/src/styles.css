@@ -1724,18 +1724,60 @@ button,
   font-weight: 700;
 }
 
-.plan-add-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-3);
+.plan-search {
+  position: relative;
 }
 
-.plan-add-controls select {
-  min-width: 0;
+.plan-search-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  left: 0;
+  max-height: min(20rem, 50vh);
+  padding: var(--space-1);
+  margin: 0;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 1.5rem var(--color-shadow);
+  list-style: none;
 }
 
-.plan-add-button {
-  height: var(--control-height);
+.plan-search-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.plan-search-option.is-active {
+  background: var(--color-accent-soft);
+}
+
+.plan-search-parent,
+.plan-search-tags {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+
+.plan-search-title {
+  font-weight: 600;
+}
+
+.plan-search-tags {
+  margin-left: auto;
+}
+
+.plan-search-empty {
+  padding: var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
 }
 
 .plan-add > p {
@@ -2126,14 +2168,6 @@ body.is-plan-dragging {
 
   .plan-heading .remaining-count {
     text-align: left;
-  }
-
-  .plan-add-controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .plan-add-button {
-    width: 100%;
   }
 
   .plan-item {

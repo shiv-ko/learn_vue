@@ -12,7 +12,9 @@ const props = defineProps<{
 const emit = defineEmits<{ toggle: [todo: Todo] }>();
 
 const orderedIds = ref<string[]>(readStoredOrder());
-const selectedTodoId = ref("");
+const searchQuery = ref("");
+const searchOpen = ref(false);
+const activeOptionIndex = ref(-1);
 const storageError = ref("");
 const announcement = ref("");
 const dragging = ref<{ id: string; pointerId: number } | null>(null);
@@ -51,6 +53,17 @@ const availableTodos = computed(() => {
     );
 });
 
+const matchingTodos = computed(() => {
+  const normalizedQuery = searchQuery.value.trim().toLocaleLowerCase();
+  if (!normalizedQuery) return availableTodos.value;
+  return availableTodos.value.filter((todo) =>
+    [todo.title, parentTitle(todo), todo.memo, todo.note, ...(todo.tags ?? [])]
+      .filter(Boolean)
+      .some((value) => value!.toLocaleLowerCase().includes(normalizedQuery)),
+  );
+});
+const activeOption = computed(() => matchingTodos.value[activeOptionIndex.value]);
+
 function readStoredOrder(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -73,13 +86,55 @@ function persistOrder(message: string) {
   }
 }
 
-function addSelectedTodo() {
-  const todo = props.todos.find((item) => item.id === selectedTodoId.value);
-  if (!todo || orderedIds.value.includes(todo.id)) return;
+function addTodo(todo: Todo) {
+  if (orderedIds.value.includes(todo.id)) return;
   orderedIds.value = [...orderedIds.value, todo.id];
-  selectedTodoId.value = "";
+  searchQuery.value = "";
+  activeOptionIndex.value = -1;
   persistOrder(`${todo.title}を実行順の最後に追加しました。`);
-  void nextTick(() => document.getElementById(`plan-handle-${todo.id}`)?.focus());
+}
+
+function addActiveTodo() {
+  if (activeOption.value) addTodo(activeOption.value);
+}
+
+function openSearch() {
+  searchOpen.value = true;
+}
+
+function updateSearch() {
+  searchOpen.value = true;
+  activeOptionIndex.value = matchingTodos.value.length ? 0 : -1;
+}
+
+function closeSearch() {
+  searchOpen.value = false;
+  activeOptionIndex.value = -1;
+}
+
+function handleSearchKey(event: KeyboardEvent) {
+  const count = matchingTodos.value.length;
+  if (event.key === "Escape") {
+    if (searchOpen.value) event.preventDefault();
+    closeSearch();
+    return;
+  }
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+  event.preventDefault();
+  searchOpen.value = true;
+  if (!count) return;
+  const step = event.key === "ArrowDown" ? 1 : -1;
+  activeOptionIndex.value = (activeOptionIndex.value + step + count) % count;
+  void nextTick(() =>
+    document
+      .getElementById(`plan-option-${activeOption.value?.id}`)
+      ?.scrollIntoView?.({ block: "nearest" }),
+  );
+}
+
+function handleSearchFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null;
+  if (!next || !(event.currentTarget as HTMLElement).contains(next)) closeSearch();
 }
 
 function removeFromPlan(todo: Todo) {
@@ -222,22 +277,55 @@ onBeforeUnmount(() => {
       <p class="remaining-count"><strong>{{ planItems.length }}</strong><span>件 計画中</span></p>
     </div>
 
-    <form class="plan-add" @submit.prevent="addSelectedTodo">
-      <label for="plan-todo-select">Todoを追加</label>
-      <div class="plan-add-controls">
-        <select id="plan-todo-select" v-model="selectedTodoId" :disabled="availableTodos.length === 0">
-          <option value="" disabled>
-            {{ availableTodos.length ? "未計画のTodoを選ぶ" : "追加できるTodoはありません" }}
-          </option>
-          <option v-for="todo in availableTodos" :key="todo.id" :value="todo.id">
-            {{ parentTitle(todo) ? `${parentTitle(todo)} › ` : "" }}{{ todo.title }}
-          </option>
-        </select>
-        <button class="chip-button plan-add-button" type="submit" :disabled="!selectedTodoId">
-          追加
-        </button>
+    <form class="plan-add" @submit.prevent="addActiveTodo" @focusout="handleSearchFocusOut">
+      <label for="plan-todo-search">Todoを追加</label>
+      <div class="plan-search">
+        <input
+          id="plan-todo-search"
+          v-model="searchQuery"
+          type="search"
+          role="combobox"
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-controls="plan-todo-options"
+          :aria-expanded="searchOpen"
+          :aria-activedescendant="activeOption ? `plan-option-${activeOption.id}` : undefined"
+          :placeholder="availableTodos.length ? 'タイトル、タグ、メモで検索' : '追加できるTodoはありません'"
+          :disabled="availableTodos.length === 0"
+          @focus="openSearch"
+          @click="openSearch"
+          @input="updateSearch"
+          @keydown="handleSearchKey"
+        />
+        <ul
+          v-show="searchOpen"
+          id="plan-todo-options"
+          class="plan-search-options"
+          role="listbox"
+          aria-label="未計画のTodo"
+        >
+          <li
+            v-for="(todo, index) in matchingTodos"
+            :id="`plan-option-${todo.id}`"
+            :key="todo.id"
+            class="plan-search-option"
+            :class="{ 'is-active': index === activeOptionIndex }"
+            role="option"
+            :aria-selected="index === activeOptionIndex"
+            @mousedown.prevent
+            @mousemove="activeOptionIndex = index"
+            @click="addTodo(todo)"
+          >
+            <span v-if="parentTitle(todo)" class="plan-search-parent">{{ parentTitle(todo) }} ›</span>
+            <span class="plan-search-title">{{ todo.title }}</span>
+            <span v-if="todo.tags?.length" class="plan-search-tags">{{ todo.tags.join("・") }}</span>
+          </li>
+          <li v-if="!matchingTodos.length" class="plan-search-empty" role="presentation">
+            「{{ searchQuery.trim() }}」に合うTodoはありません
+          </li>
+        </ul>
       </div>
-      <p>実行順はこのブラウザに保存されます。</p>
+      <p>候補をクリックするか、上下キーで選んでEnterで追加します。実行順はこのブラウザに保存されます。</p>
     </form>
 
     <p v-if="errorMessage" class="inline-error" role="alert">{{ errorMessage }}</p>
@@ -325,7 +413,7 @@ onBeforeUnmount(() => {
       <span aria-hidden="true">→</span>
       <div>
         <h2>次にやるTodoを決めましょう</h2>
-        <p>上の選択欄から追加すると、ここに実行順が表示されます。</p>
+        <p>上の検索欄から追加すると、ここに実行順が表示されます。</p>
       </div>
     </div>
 

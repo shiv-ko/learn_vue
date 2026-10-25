@@ -25,6 +25,7 @@ function submit() {
   const cleanTitle = title.value.trim();
   if (!cleanTitle) return;
   // 親コンポーネント（TodoWorkspace．vueにしらせる）
+  // 引数でTodoInput型のオブジェクトを渡すことで、親で保存できる
   emit("create", {
     title: cleanTitle,
     ...(dueDate.value ? { dueDate: dueDate.value } : {}),

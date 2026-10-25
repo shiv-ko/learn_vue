@@ -14,6 +14,7 @@ const activeView = ref<"todos" | "plan" | "bookmarks">("todos");
 
 onMounted(async () => {
   // ここでtokenを取得
+  // cognitoからもらえるjwt
   token.value = await getCurrentToken();
   checkingSession.value = false;
 });
@@ -50,7 +51,7 @@ function handleLogout() {
     @show-plan="activeView = 'plan'"
     @show-bookmarks="activeView = 'bookmarks'"
   />
-  <!-- activeViewで画面が分岐する -->
+  <!-- activeView, v-else-ifで画面が分岐する -->
   <BookmarkWorkspace
     v-else-if="token"
     :token="token"

@@ -11,7 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-// したのtodoとbookmarksの中から呼べるようにジェネリクスで書いている
+// todoとbookmarksの両方から呼べるようにジェネリクスで書いている
 // optionsでリクエストの中身を決めている。
 // post,fetchなどを使って分岐を作る（src/todos-api/handler.ts）
 async function request<T>(
@@ -21,8 +21,10 @@ async function request<T>(
   basePath: string = appConfig.apiBasePath,
 ): Promise<T> {
   const response = await fetch(`${basePath}${path}`, {
-    // リクエストの中身
+    // リクエストの中身を入れる
     ...options,
+    // tokenをheaderへ
+    // cognitoからもらえるjwt
     headers: {
       Authorization: token,
       "Content-Type": "application/json",
@@ -50,7 +52,7 @@ async function request<T>(
       response.status,
     );
   }
-
+  // Tとして返す
   return (await response.json()) as T;
 }
 

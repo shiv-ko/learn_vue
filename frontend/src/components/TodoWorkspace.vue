@@ -29,7 +29,8 @@ const errorMessage = ref("");
 const lastSyncedAt = ref<Date | null>(null);
 const pendingDelete = ref<{ todo: Todo; timer: number } | null>(null);
 const pendingCompletion = ref<{ todo: Todo; timer: number } | null>(null);
-// drag and drop
+
+// drag and dropしている個々の要素のref
 const dragging = ref<{
   todo: Todo;
   pointerId: number;
@@ -38,6 +39,7 @@ const dragging = ref<{
   origin: Priority | null;
 } | null>(null);
 
+// drag and dropをする対象の優先度と親todoのid
 const activeDropPriority = ref<Priority | null | undefined>(undefined);
 const activeDropParentId = ref<string | null>(null);
 const dragAnnouncement = ref("");
@@ -55,6 +57,7 @@ const priorityLanes: Array<{
   { key: "none", value: null, label: "未設定", hint: "あとで整理する" },
 ];
 
+// 今何個activeなtodoがあるかを、computedで計算する。
 const openCount = computed(
   () =>
     todos.value.filter(
@@ -63,9 +66,12 @@ const openCount = computed(
         (!isStackedTodo(todo) || !todo.parentId && childrenFor(todo.id).length === 0),
     ).length,
 );
+// stacked todoの親の一覧オブジェクト
+// それぞれのtodoItemに渡すことで
 const stackedParents = computed(() =>
   todos.value.filter((todo) => !todo.parentId && isStackedTodo(todo)),
 );
+// タグの一覧と件数(表示している)
 const availableTags = computed(() => {
   const counts = new Map<string, number>();
   for (const todo of todos.value) {
@@ -73,8 +79,13 @@ const availableTags = computed(() => {
   }
   return [...counts.entries()].sort(([tagA, countA], [tagB, countB]) => countB - countA || tagA.localeCompare(tagB, "ja"));
 });
+
+// 現在見えるtodo(絞り込みをする時に動く)
+// filter.valueのrefとかが変わると自動で中身が更新される。
 const visibleTodos = computed(() => {
   const knownIds = new Set(todos.value.map((todo) => todo.id));
+  // 子供todoは除く。(親の中に表示されるので親だけで良い)
+  // filterに応じて、結果を変える。
   const filtered = todos.value.filter((todo) => {
     if (todo.parentId && knownIds.has(todo.parentId)) return false;
     const matchesState =
@@ -87,6 +98,9 @@ const visibleTodos = computed(() => {
   });
   return filtered.sort((a, b) => Number(a.done) - Number(b.done) || b.createdAt.localeCompare(a.createdAt));
 });
+
+// 優先度ごとに一覧を振り分ける。
+// 
 const groupedTodos = computed(() =>
   priorityLanes.map((lane) => ({
     ...lane,
